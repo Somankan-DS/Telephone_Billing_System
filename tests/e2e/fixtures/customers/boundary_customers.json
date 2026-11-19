@@ -1,0 +1,35 @@
+[
+  {
+    "description": "Invalid short phone number",
+    "payload": {
+      "first_name": "Short",
+      "last_name": "Phone",
+      "email": "short.phone@example.com",
+      "phone_number": "12345",
+      "plan_id": 1
+    },
+    "expected_status": 400
+  },
+  {
+    "description": "Duplicate email address",
+    "payload": {
+      "first_name": "Duplicate",
+      "last_name": "Email",
+      "email": "aarav.patel@example.com",
+      "phone_number": "+919876500099",
+      "plan_id": 1
+    },
+    "expected_status": 409
+  },
+  {
+    "description": "Non-existent plan assignment",
+    "payload": {
+      "first_name": "Unknown",
+      "last_name": "Plan",
+      "email": "unknown.plan@example.com",
+      "phone_number": "+919876500098",
+      "plan_id": 99999
+    },
+    "expected_status": 400
+  }
+]

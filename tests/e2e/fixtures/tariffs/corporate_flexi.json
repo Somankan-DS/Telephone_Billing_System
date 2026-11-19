@@ -1,0 +1,15 @@
+{
+  "plan_code": "POST-CORP-699",
+  "name": "Corporate Flexi 699",
+  "plan_type": "POSTPAID",
+  "monthly_rental": 699.00,
+  "validity_days": null,
+  "free_local_minutes": 2000,
+  "free_std_minutes": 500,
+  "free_isd_minutes": 60,
+  "local_rate_per_min": 0.50,
+  "std_rate_per_min": 0.80,
+  "isd_rate_per_min": 7.00,
+  "pulse_seconds": 60,
+  "is_active": true
+}

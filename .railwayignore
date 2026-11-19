@@ -1,0 +1,17 @@
+node_modules/
+dist/
+scratch/
+tests/
+docs/
+.agents/
+storage/
+.env
+*.pptx
+*.pdf
+*.db
+*.db-shm
+*.db-wal
+*.png
+*.log
+TEST_INFRA.md
+TEST_READY.md

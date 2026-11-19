@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeleBill Pro — Smart Telephone Billing & Telecom Management Platform</title>
+  <!-- Google Fonts: Space Grotesk, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Pure Standalone Stylesheet -->
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+  <!-- ========================================================================= -->
+  <!-- SIDEBAR NAVIGATION -->
+  <!-- ========================================================================= -->
+  <aside class="app-sidebar">
+    <!-- Brand Header -->
+    <div class="sidebar-header">
+      <div style="display:flex;align-items:center;overflow:hidden;">
+        <div class="sidebar-brand-icon">
+          <i data-lucide="phone-call" style="width:18px;height:18px;color:#9EFFBF;"></i>
+        </div>
+        <div class="sidebar-brand-text">
+          <h1 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:#F7F7F5;letter-spacing:-0.02em;line-height:1.2;white-space:nowrap;">TeleBill <span style="color:#9EFFBF;">PRO</span></h1>
+          <p style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;color:#8A8A84;letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap;">TELECOM BSS PLATFORM</p>
+        </div>
+      </div>
+      <button id="sidebar-collapse-btn" onclick="toggleSidebar()" class="sidebar-toggle-btn" title="Collapse Sidebar">
+        <i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <!-- Navigation Links -->
+    <div style="flex:1;overflow-y:auto;padding:12px;">
+
+      <!-- ADMIN / OPERATOR SECTION -->
+      <div id="admin-sidebar-section">
+        <div class="nav-section-title" id="admin-sidebar-title">OPERATIONS (ADMIN)</div>
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active" data-tooltip="01. Dashboard & Analytics">
+          <i data-lucide="layout-dashboard"></i> <span>01. Dashboard & Analytics</span>
+        </button>
+        <button onclick="switchTab('customers')" id="nav-customers" class="nav-btn" data-tooltip="02. Subscribers">
+          <i data-lucide="users"></i> <span>02. Subscribers (Customers)</span>
+        </button>
+        <button onclick="switchTab('tariffs')" id="nav-tariffs" class="nav-btn" data-tooltip="03. Tariff Plans">
+          <i data-lucide="layers"></i> <span>03. Tariff Plans & Rates</span>
+        </button>
+        <button onclick="switchTab('cdr')" id="nav-cdr" class="nav-btn" data-tooltip="04. Call Records">
+          <i data-lucide="activity"></i> <span>04. Call Records (CDR)</span>
+        </button>
+        <button onclick="switchTab('billing')" id="nav-billing" class="nav-btn" data-tooltip="05. Invoices & Billing">
+          <i data-lucide="file-text"></i> <span>05. Invoices & Billing</span>
+        </button>
+        <button onclick="switchTab('payments')" id="nav-payments" class="nav-btn" data-tooltip="06. Payments">
+          <i data-lucide="credit-card"></i> <span>06. Payments & Settlements</span>
+        </button>
+      </div>
+
+      <!-- SUBSCRIBER SELF-SERVICE SECTION -->
+      <div id="customer-sidebar-section" style="margin-top:12px;">
+        <div class="nav-section-title">SUBSCRIBER PORTAL</div>
+        <button onclick="switchTab('customer-portal')" id="nav-customer-portal" class="nav-btn" data-tooltip="07. My Account">
+          <i data-lucide="user-check"></i> <span>07. My Account & Quota</span>
+        </button>
+        <button onclick="switchTab('prediction')" id="nav-prediction" class="nav-btn" data-tooltip="08. Bill Forecast">
+          <i data-lucide="trending-up"></i> <span>08. Bill Forecast (AI)</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- User Profile Footer -->
+    <div class="sidebar-user-footer">
+      <div class="sidebar-user-info" style="display:flex;align-items:center;gap:10px;overflow:hidden;">
+        <div id="user-avatar" class="sidebar-user-avatar">
+          AD
+        </div>
+        <div class="sidebar-user-details">
+          <p id="user-name" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#F7F7F5;max-width:105px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">admin</p>
+          <span id="user-role-badge" class="badge badge-paid" style="font-size:9px;padding:1px 6px;">ADMIN</span>
+        </div>
+      </div>
+      <button onclick="logout()" title="Sign Out" class="sidebar-logout-btn">
+        <i data-lucide="log-out" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN APPLICATION CONTENT -->
+  <!-- ========================================================================= -->
+  <main class="app-main">
+
+    <!-- Topbar -->
+    <header class="app-topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button id="topbar-sidebar-toggle" onclick="toggleSidebar()" class="btn btn-secondary btn-sm" title="Toggle Sidebar (Expand/Collapse)" style="padding:6px 10px;">
+          <i data-lucide="panel-left" style="width:16px;height:16px;"></i>
+        </button>
+        <div>
+          <h2 id="page-title" style="font-size:17px;font-weight:700;color:var(--text-primary);">Telecom Operations Dashboard</h2>
+          <p style="font-size:11px;color:var(--text-secondary);">Carrier-Grade Business Support System (BSS) & Rating Engine</p>
+        </div>
+      </div>
+
+      <!-- Quick Role Switcher (Admin vs Customer) -->
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="role-switcher-banner">
+          <span class="role-switcher-title">Switch Perspective:</span>
+          <button id="btn-role-admin" onclick="quickLogin('admin')" class="role-toggle-btn active">👨‍💼 Admin</button>
+          <button id="btn-role-staff" onclick="quickLogin('staff')" class="role-toggle-btn">👷‍♂️ Operator</button>
+          <button id="btn-role-customer" onclick="quickLogin('customer')" class="role-toggle-btn">👤 Customer</button>
+        </div>
+
+        <!-- Refresh Button -->
+        <button onclick="refreshActiveTab()" class="btn btn-secondary btn-sm" title="Refresh Live Data">
+          <i data-lucide="refresh-cw" style="width:14px;height:14px;margin-right:6px;"></i> Refresh
+        </button>
+
+        <!-- Reset Demo Data Button (Admin Only) -->
+        <button id="btn-reset-demo" onclick="confirmResetDemo()" class="btn btn-secondary btn-sm" style="color:var(--coral-dark);border-color:rgba(255,140,105,0.6);background:var(--coral-light);" title="Reset all test calls, bills, and payments back to initial benchmark state">
+          <i data-lucide="rotate-ccw" style="width:14px;height:14px;margin-right:6px;"></i> Reset Demo Data
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Dynamic Tab Panes -->
+    <div class="app-content">
+
+      <!-- ========================================================================= -->
+      <!-- TAB 1: DASHBOARD -->
+      <!-- ========================================================================= -->
+      <section id="tab-dashboard" class="tab-pane active space-y-6">
+
+        <!-- KPI Metric Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-card-subscribers">
+            <span class="kpi-label">01. Total Subscribers</span>
+            <span id="kpi-total-customers" class="kpi-value">--</span>
+            <span id="kpi-active-customers" class="kpi-sub">-- Active</span>
+          </div>
+          <div class="kpi-card kpi-card-revenue">
+            <span class="kpi-label">02. Revenue Realized</span>
+            <span id="kpi-total-revenue" class="kpi-value text-forest">₹0.00</span>
+            <span class="kpi-sub">Settled Invoices</span>
+          </div>
+          <div class="kpi-card kpi-card-billed">
+            <span class="kpi-label">03. Invoiced Billed</span>
+            <span id="kpi-total-billed" class="kpi-value">₹0.00</span>
+            <span class="kpi-sub">Inclusive of 18% GST</span>
+          </div>
+          <div class="kpi-card kpi-card-receivables">
+            <span class="kpi-label">04. Pending Receivables</span>
+            <span id="kpi-outstanding" class="kpi-value text-coral">₹0.00</span>
+            <span class="kpi-sub">Unpaid Arrears</span>
+          </div>
+          <div class="kpi-card kpi-card-calls">
+            <span class="kpi-label">05. Total Calls Rated</span>
+            <span id="kpi-total-calls" class="kpi-value">0</span>
+            <span class="kpi-sub">Pulse-Rated CDRs</span>
+          </div>
+        </div>
+
+        <!-- Demonstration & Operations Hub (Clear 4 Steps) -->
+        <div class="card ops-hub-card">
+          <div style="margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <span class="ops-hub-badge">SYSTEM WORKFLOW</span>
+              <h3 class="ops-hub-title">Quick Operations Hub (End-to-End Telecom Cycle)</h3>
+            </div>
+            <p class="ops-hub-desc">
+              Execute lifecycle events sequentially: Onboard subscribers, simulate network calls, execute billing cycles, and settle invoices.
+            </p>
+          </div>
+          <div class="ops-hub-actions">
+            <button id="btn-hub-onboard" onclick="openModal('modal-add-customer')" class="btn btn-primary">
+              <i data-lucide="user-plus" style="width:14px;height:14px;margin-right:6px;"></i> 01. Onboard Subscriber
+            </button>
+            <button id="btn-hub-simulate" onclick="openModal('modal-simulate-traffic')" class="btn btn-secondary">
+              <i data-lucide="phone-outgoing" style="width:14px;height:14px;margin-right:6px;"></i> 02. Simulate Calls
+            </button>
+            <button id="btn-hub-billing" onclick="openModal('modal-run-billing')" class="btn btn-secondary">
+              <i data-lucide="receipt" style="width:14px;height:14px;margin-right:6px;"></i> 03. Run Monthly Billing
+            </button>
+            <button id="btn-hub-payment" onclick="openModal('modal-make-payment')" class="btn btn-secondary">
+              <i data-lucide="check-circle" style="width:14px;height:14px;margin-right:6px;"></i> 04. Settle / Pay Bill
+            </button>
+          </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+          <div class="card">
+            <h3 style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:14px;">Monthly Revenue Trends (Billed vs Realized Collections)</h3>
+            <div style="height:240px;position:relative;">
+              <canvas id="chart-revenue-trend"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:14px;">Call Traffic Mix (Local / STD / ISD)</h3>
+            <div style="height:240px;position:relative;">
+              <canvas id="chart-traffic-mix"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions Table -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <h3 style="font-size:13px;font-weight:700;color:var(--text-primary);">Recent Payment Transactions</h3>
+            <button onclick="switchTab('payments')" class="btn btn-secondary btn-sm">View All Payments</button>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Payment Ref</th>
+                  <th>Subscriber</th>
+                  <th>Invoice / Account</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-recent-payments">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 2: SUBSCRIBERS (CUSTOMERS) -->
+      <!-- ========================================================================= -->
+      <section id="tab-customers" class="tab-pane space-y-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 style="font-size:16px;font-weight:700;color:var(--text-primary);">Subscribers & Accounts Management</h3>
+            <p style="font-size:12px;color:var(--text-secondary);">Manage customer profiles, tariff plans, prepaid balances, and account statuses.</p>
+          </div>
+          <button onclick="openModal('modal-add-customer')" class="btn btn-primary">
+            <i data-lucide="user-plus" style="width:14px;height:14px;margin-right:6px;"></i> + Add New Customer
+          </button>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="card" style="padding:12px 16px;display:flex;gap:12px;align-items:center;">
+          <input type="text" id="cust-search" oninput="loadCustomers()" placeholder="Search by name, phone (+91...), or account #..." class="input-field" style="max-width:320px;" />
+          <select id="cust-status-filter" onchange="loadCustomers()" class="input-field" style="max-width:180px;">
+            <option value="">All Statuses</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="SUSPENDED">SUSPENDED</option>
+            <option value="INACTIVE">INACTIVE</option>
+          </select>
+        </div>
+
+        <!-- Customers Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Account #</th>
+                <th>Subscriber Name</th>
+                <th>Phone Number</th>
+                <th>Assigned Plan</th>
+                <th>Balance / Limit</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 3: TARIFF PLANS -->
+      <!-- ========================================================================= -->
+      <section id="tab-tariffs" class="tab-pane space-y-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 style="font-size:16px;font-weight:700;color:var(--text-primary);">Tariff Plans & Configurable Rating Rules</h3>
+            <p style="font-size:12px;color:var(--text-secondary);">Define call pulse rules (60s / 1s), local/STD/ISD tariffs, and free minute quotas.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="badge-tariff-readonly" class="badge badge-partial" style="display:none;font-size:11px;padding:6px 12px;">
+              <i data-lucide="lock" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> Read-Only (Managed by Admin)
+            </span>
+            <button id="btn-create-tariff" onclick="openModal('modal-add-plan')" class="btn btn-primary">
+              <i data-lucide="plus-circle" style="width:14px;height:14px;margin-right:6px;"></i> + Create Tariff Plan
+            </button>
+          </div>
+        </div>
+
+        <!-- Tariff Cards Grid -->
+        <div id="tariff-cards-grid" class="tariff-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 4: CALL DETAIL RECORDS (CDR) -->
+      <!-- ========================================================================= -->
+      <section id="tab-cdr" class="tab-pane space-y-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 style="font-size:16px;font-weight:700;color:var(--text-primary);">Call Detail Records (CDR) & Rating</h3>
+            <p style="font-size:12px;color:var(--text-secondary);">Call traffic records rated with discrete pulse increments and SHA-256 deduplication.</p>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="openModal('modal-single-cdr')" class="btn btn-secondary">
+              <i data-lucide="plus" style="width:14px;height:14px;margin-right:6px;"></i> Log Single Call
+            </button>
+            <button id="btn-cdr-simulate" onclick="openModal('modal-simulate-traffic')" class="btn btn-primary">
+              <i data-lucide="zap" style="width:14px;height:14px;margin-right:6px;"></i> Generate Demo Calls
+            </button>
+          </div>
+        </div>
+
+        <!-- CDR Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Call ID</th>
+                <th>Caller</th>
+                <th>Receiver</th>
+                <th>Category</th>
+                <th>Duration & Pulses</th>
+                <th>Quota Deducted</th>
+                <th>Rated Amount</th>
+                <th>Status</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="cdr-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 5: BILLING & INVOICES -->
+      <!-- ========================================================================= -->
+      <section id="tab-billing" class="tab-pane space-y-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 style="font-size:16px;font-weight:700;color:var(--text-primary);">Monthly Billing & Invoices</h3>
+            <p style="font-size:12px;color:var(--text-secondary);">Batch billing cycle runs with 18% statutory GST, arrears rollover, and vector PDF downloads.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="badge-billing-readonly" class="badge badge-partial" style="display:none;font-size:11px;padding:6px 12px;">
+              <i data-lucide="lock" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> Billing Runs Restricted to Admin
+            </span>
+            <button id="btn-billing-check-overdue" onclick="checkOverdueBills()" class="btn btn-secondary">
+              <i data-lucide="alert-circle" style="width:14px;height:14px;margin-right:6px;"></i> Check Overdue
+            </button>
+            <button id="btn-billing-run" onclick="openModal('modal-run-billing')" class="btn btn-primary">
+              <i data-lucide="play" style="width:14px;height:14px;margin-right:6px;"></i> Run Monthly Billing
+            </button>
+          </div>
+        </div>
+
+        <!-- Invoices Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Subscriber</th>
+                <th>Cycle</th>
+                <th>Rental</th>
+                <th>Calls</th>
+                <th>18% GST</th>
+                <th>Arrears</th>
+                <th>Total Due</th>
+                <th>Status</th>
+                <th class="text-right">PDF Invoice</th>
+              </tr>
+            </thead>
+            <tbody id="invoices-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 6: PAYMENTS -->
+      <!-- ========================================================================= -->
+      <section id="tab-payments" class="tab-pane space-y-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 style="font-size:16px;font-weight:700;color:var(--text-primary);">Payment Management & Settlements</h3>
+            <p style="font-size:12px;color:var(--text-secondary);">Payment records with automated status updates and wallet credits on surplus overpayments.</p>
+          </div>
+          <button onclick="openModal('modal-make-payment')" class="btn btn-primary">
+            <i data-lucide="plus-circle" style="width:14px;height:14px;margin-right:6px;"></i> Record / Simulate Payment
+          </button>
+        </div>
+
+        <!-- Payments Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Receipt #</th>
+                <th>Transaction Ref</th>
+                <th>Subscriber</th>
+                <th>Invoice Target</th>
+                <th>Method</th>
+                <th>Amount Paid</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="payments-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 8: SUBSCRIBER SELF-SERVICE PORTAL (CUSTOMER VIEW) -->
+      <!-- ========================================================================= -->
+      <section id="tab-customer-portal" class="tab-pane space-y-6">
+        <div class="card customer-overview-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <span class="badge badge-paid">Subscribed Account</span>
+              <h3 id="portal-plan-name" style="font-size:20px;font-weight:700;color:var(--forest);margin-top:4px;">Postpaid Standard 299</h3>
+              <p id="portal-plan-desc" style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Standard monthly postpaid package with bundled allowances.</p>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;">Account Number</span>
+              <p id="portal-account-num" class="font-mono" style="font-size:16px;font-weight:700;color:var(--text-primary);">TEL-202611-00001</p>
+              <span id="portal-account-type" class="badge badge-postpaid">POSTPAID</span>
+            </div>
+          </div>
+
+          <!-- Quota Meters -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:20px;padding-top:16px;border-top:1px solid var(--grid-line);">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:6px;font-family:'JetBrains Mono',monospace;">
+                <span>LOCAL FREE MINUTES</span>
+                <span id="portal-quota-local">-- / -- mins</span>
+              </div>
+              <div class="progress-bar-track">
+                <div id="portal-bar-local" class="progress-bar-fill fill-forest" style="width:50%;"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:6px;font-family:'JetBrains Mono',monospace;">
+                <span>STD NATIONAL MINUTES</span>
+                <span id="portal-quota-std">-- / -- mins</span>
+              </div>
+              <div class="progress-bar-track">
+                <div id="portal-bar-std" class="progress-bar-fill fill-mint" style="width:50%;"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:4px;font-family:'JetBrains Mono',monospace;">
+                <span>PREPAID WALLET</span>
+                <span id="portal-wallet-balance" class="text-forest" style="font-weight:700;">₹0.00</span>
+              </div>
+              <p style="font-size:10px;color:var(--text-secondary);margin-top:4px;font-family:'JetBrains Mono',monospace;">CREDIT LIMIT: <strong id="portal-credit-limit">₹1500.00</strong></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoices List for Customer -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <h4 style="font-size:14px;font-weight:700;color:var(--text-primary);">My Invoices & Downloadable PDF Bills</h4>
+            <button onclick="openModal('modal-make-payment')" class="btn btn-primary btn-sm">
+              <i data-lucide="credit-card" style="width:14px;height:14px;margin-right:4px;"></i> Pay Bill Online
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Cycle Period</th>
+                  <th>Rental</th>
+                  <th>Calls</th>
+                  <th>Total Due</th>
+                  <th>Status</th>
+                  <th class="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="portal-invoices-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 9: BILL FORECAST (AI HWMA) -->
+      <!-- ========================================================================= -->
+      <section id="tab-prediction" class="tab-pane space-y-6">
+        <div class="card forecast-overview-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div>
+              <span id="pred-confidence-badge" class="badge badge-paid">CONFIDENCE: 85%</span>
+              <h3 style="font-size:18px;font-weight:700;color:var(--forest);margin-top:6px;">Smart End-of-Cycle Bill Forecast</h3>
+              <p style="font-size:12px;color:var(--text-secondary);">Eliminates "bill shock" by projecting end-of-month charges based on your daily calling intensity.</p>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:10px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">Projected End-of-Month Bill</span>
+              <p id="pred-predicted-total" class="font-heading" style="font-size:28px;font-weight:700;color:var(--forest);">₹352.82</p>
+              <span style="font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">INCLUSIVE OF 18% GST</span>
+            </div>
+          </div>
+
+          <!-- Narrative Explanation -->
+          <div class="forecast-narrative-box">
+            <p style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--forest);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">Mathematical Forecast Narrative:</p>
+            <p id="pred-explanation-narrative" style="font-size:12px;color:var(--text-primary);line-height:1.5;">
+              Based on your unbilled calling activity and historical usage, your estimated bill for the current cycle is ₹352.82.
+            </p>
+          </div>
+
+          <!-- Current Run Rate Breakdown -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;">
+            <div class="card forecast-stat-card">
+              <span class="forecast-stat-label">Current Accrued Usage</span>
+              <p id="pred-current-usage" class="forecast-stat-value">₹0.00</p>
+            </div>
+            <div class="card forecast-stat-card">
+              <span class="forecast-stat-label">Fixed Plan Rental</span>
+              <p id="pred-fixed-rental" class="forecast-stat-value">₹299.00</p>
+            </div>
+            <div class="card forecast-stat-card">
+              <span class="forecast-stat-label">Billing Cycle Progress</span>
+              <p id="pred-cycle-day" class="forecast-stat-value">Day 15 / 30</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hourly Heatmap -->
+        <div class="card">
+          <h4 style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:14px;">24-Hour Calling Activity Heatmap</h4>
+          <div style="height:220px;position:relative;">
+            <canvas id="chart-hourly-heatmap"></canvas>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL WINDOWS (STRICTLY HIDDEN BY DEFAULT VIA PURE CSS) -->
+  <!-- ========================================================================= -->
+
+  <!-- Modal 1: Onboard Subscriber -->
+  <div id="modal-add-customer" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 class="modal-title">Onboard New Subscriber</h4>
+        <button onclick="closeModal('modal-add-customer')" class="modal-close-btn">&times;</button>
+      </div>
+      <form onsubmit="submitAddCustomer(event)">
+        <div class="modal-body">
+          <div class="input-row">
+            <div class="form-group">
+              <label class="input-label">First Name *</label>
+              <input type="text" name="firstName" required placeholder="e.g. Ramesh" class="input-field" />
+            </div>
+            <div class="form-group">
+              <label class="input-label">Last Name *</label>
+              <input type="text" name="lastName" required placeholder="e.g. Kumar" class="input-field" />
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="form-group">
+              <label class="input-label">Email Address *</label>
+              <input type="email" name="email" required placeholder="ramesh@gmail.com" class="input-field" />
+            </div>
+            <div class="form-group">
+              <label class="input-label">Phone Number *</label>
+              <input type="text" name="phone" required placeholder="+919876543210" class="input-field" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Postal Address *</label>
+            <input type="text" name="address" required placeholder="12 VIP Road, Kolkata" class="input-field" />
+          </div>
+          <div class="input-row">
+            <div class="form-group">
+              <label class="input-label">Select Tariff Plan *</label>
+              <select name="tariffPlanId" id="customer-plan-select" required class="input-field">
+                <option value="9c56cfab-0740-4fdb-9dfa-50f6bf844c9f">Postpaid Standard 299 [POST-STD-299] (POSTPAID)</option>
+                <option value="2cd3a5af-3e1f-46d1-aeed-ca4141e1f4ae">Prepaid Value 199 [PRE-VAL-199] (PREPAID)</option>
+                <option value="8544083f-5349-4fd4-ac99-19aaaa322ff2">Enterprise Unlimited 999 [POST-ENT-999] (POSTPAID)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="input-label">Initial Balance (₹)</label>
+              <input type="number" step="0.01" name="initialBalance" value="100.00" class="input-field" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="closeModal('modal-add-customer')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Customer Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Create Tariff Plan -->
+  <div id="modal-add-plan" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 class="modal-title">Create New Tariff Plan</h4>
+        <button onclick="closeModal('modal-add-plan')" class="modal-close-btn">&times;</button>
+      </div>
+      <form onsubmit="submitAddPlan(event)">
+        <div class="modal-body">
+          <div class="input-row">
+            <div class="form-group">
+              <label class="input-label">Plan Code *</label>
+              <input type="text" name="planCode" required placeholder="POST-CUSTOM-399" class="input-field font-mono" style="text-transform:uppercase;" />
+            </div>
+            <div class="form-group">
+              <label class="input-label">Plan Name *</label>
+              <input type="text" name="name" required placeholder="Postpaid Super Saver" class="input-field" />
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="form-group">
+              <label class="input-label">Plan Type *</label>
+              <select name="type" required class="input-field">
+                <option value="POSTPAID">POSTPAID</option>
+                <option value="PREPAID">PREPAID</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="input-label">Monthly Rental (₹)</label>
+              <input type="number" step="0.01" name="monthlyRental" value="299.00" class="input-field" />
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="form-group">
+              <label class="input-label">Pulse Increment</label>
+              <select name="pulseSeconds" class="input-field font-mono">
+                <option value="60">60 seconds (Per-Minute)</option>
+                <option value="30">30 seconds (Half-Minute)</option>
+                <option value="1">1 second (Per-Second)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="input-label">Free Local Quota (Mins)</label>
+              <input type="number" name="includedLocalMinutes" value="300" class="input-field" />
+            </div>
+          </div>
+          <div class="input-row-3">
+            <div class="form-group">
+              <label class="input-label">Local Rate (₹/m)</label>
+              <input type="number" step="0.01" name="rateLocal" value="0.50" required class="input-field" />
+            </div>
+            <div class="form-group">
+              <label class="input-label">STD Rate (₹/m)</label>
+              <input type="number" step="0.01" name="rateStd" value="0.75" required class="input-field" />
+            </div>
+            <div class="form-group">
+              <label class="input-label">ISD Rate (₹/m)</label>
+              <input type="number" step="0.01" name="rateIsd" value="5.00" required class="input-field" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="closeModal('modal-add-plan')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Tariff Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Simulate Calls -->
+  <div id="modal-simulate-traffic" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 class="modal-title">Simulate Network Calls</h4>
+        <button onclick="closeModal('modal-simulate-traffic')" class="modal-close-btn">&times;</button>
+      </div>
+      <form onsubmit="submitSimulateTraffic(event)">
+        <div class="modal-body">
+          <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">
+            Generates realistic telephone call records across your subscribers to demonstrate real-time pulse rating and allowance deductions.
+          </p>
+          <div class="form-group">
+            <label class="input-label">Target Customer (Optional)</label>
+            <select name="customerId" id="sim-customer-select" class="input-field">
+              <option value="">All Active Customers (Distributed)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Number of Calls to Generate</label>
+            <input type="number" name="callCount" value="15" min="1" max="100" class="input-field" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="closeModal('modal-simulate-traffic')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Generate Calls Now</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Run Monthly Billing -->
+  <div id="modal-run-billing" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 class="modal-title">Execute Monthly Billing Run</h4>
+        <button onclick="closeModal('modal-run-billing')" class="modal-close-btn">&times;</button>
+      </div>
+      <form onsubmit="submitRunBilling(event)">
+        <div class="modal-body">
+          <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">
+            Closes the billing period, totals unbilled call charges, adds fixed monthly rental, applies 18% statutory GST, rolls over past arrears, and produces official invoices.
+          </p>
+          <div class="form-group">
+            <label class="input-label">Billing Cycle Code *</label>
+            <input type="text" name="billingCycleCode" value="2026-11" required class="input-field font-mono" />
+          </div>
+          <div class="form-group">
+            <label class="input-label">Target Customer (Optional)</label>
+            <select name="customerId" id="billing-customer-select" class="input-field">
+              <option value="">All Active Postpaid Customers</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="closeModal('modal-run-billing')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Execute Billing Run</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Record / Pay Invoice -->
+  <div id="modal-make-payment" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 class="modal-title">Record / Settle Invoice Payment</h4>
+        <button onclick="closeModal('modal-make-payment')" class="modal-close-btn">&times;</button>
+      </div>
+      <form onsubmit="submitMakePayment(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="input-label">Select Invoice to Settle</label>
+            <select name="invoiceId" id="payment-invoice-select" class="input-field">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Payment Amount (INR ₹) *</label>
+            <input type="number" step="0.01" name="amount" id="payment-amount-input" value="352.82" required class="input-field font-mono font-bold" />
+            <p style="font-size:10px;color:var(--text-secondary);margin-top:3px;">Any amount paid in excess of invoice due will be credited directly to the customer's prepaid wallet.</p>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Payment Method *</label>
+            <select name="paymentMethod" required class="input-field">
+              <option value="UPI">UPI (Google Pay / PhonePe / Paytm)</option>
+              <option value="CREDIT_CARD">Credit / Debit Card</option>
+              <option value="NET_BANKING">Net Banking</option>
+              <option value="CASH">Cash Counter Payment</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="closeModal('modal-make-payment')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-success">Process Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 6: Single CDR Log -->
+  <div id="modal-single-cdr" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 class="modal-title">Log Outgoing Call Record</h4>
+        <button onclick="closeModal('modal-single-cdr')" class="modal-close-btn">&times;</button>
+      </div>
+      <form onsubmit="submitSingleCdr(event)">
+        <div class="modal-body">
+          <div class="input-row">
+            <div class="form-group">
+              <label class="input-label">Caller Phone *</label>
+              <input type="text" name="callerMsisdn" value="+919876543210" required class="input-field font-mono" />
+            </div>
+            <div class="form-group">
+              <label class="input-label">Destination Phone *</label>
+              <input type="text" name="receiverMsisdn" value="+919123456789" required class="input-field font-mono" />
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="form-group">
+              <label class="input-label">Call Type</label>
+              <select name="callType" class="input-field">
+                <option value="LOCAL">LOCAL</option>
+                <option value="STD">STD (National)</option>
+                <option value="ISD">ISD (International)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="input-label">Duration (Seconds)</label>
+              <input type="number" name="durationSeconds" value="125" required class="input-field font-mono" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="closeModal('modal-single-cdr')" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Rate & Ingest Call</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification & Toast Containers -->
+  <div id="toast-container"></div>
+
+  <!-- Client Application Engine -->
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+scratch/
+storage/
+.agents/
+.env
+*.db
+*.db-shm
+*.db-wal
+*.log
+TeleBill_Pro_Presentation.pptx
+TeleBill_Pro_Presentation.pdf
+*Canva*

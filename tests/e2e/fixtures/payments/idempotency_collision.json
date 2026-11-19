@@ -1,0 +1,15 @@
+{
+  "idempotency_key": "c3b885c4-6b79-4d37-9753-4886bdfc0001",
+  "initial_payment": {
+    "invoice_id": 1,
+    "amount": 590.00,
+    "payment_method": "UPI",
+    "simulation_outcome": "SUCCESS"
+  },
+  "conflicting_payment": {
+    "invoice_id": 1,
+    "amount": 750.00,
+    "payment_method": "CREDIT_CARD",
+    "simulation_outcome": "SUCCESS"
+  }
+}

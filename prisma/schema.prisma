@@ -1,0 +1,312 @@
+// TeleBill Pro - Authoritative 11-Table Relational Schema
+// Configured for SQLite with Write-Ahead Logging (WAL) and portable to PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 1. USER & AUTHENTICATION
+// ==========================================
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  role         String    @default("CUSTOMER") // Role: ADMIN, STAFF, CUSTOMER
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  customer     Customer?
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+// ==========================================
+// 2. CUSTOMER SUBSCRIBER PROFILE
+// ==========================================
+
+model Customer {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  accountNumber  String   @unique // Format: TEL-YYYYMM-XXXXX
+  firstName      String
+  lastName       String
+  phone          String   @unique
+  address        String
+  city           String?
+  state          String?
+  postalCode     String?
+  status         String   @default("ACTIVE") // CustomerStatus: ACTIVE, SUSPENDED, INACTIVE
+  prepaidBalance Decimal  @default(0.00)     // DECIMAL(10, 2)
+  creditLimit    Decimal  @default(2000.00)  // DECIMAL(10, 2)
+  tariffPlanId   String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tariffPlan          TariffPlan            @relation(fields: [tariffPlanId], references: [id])
+  allowanceBuckets    FreeAllowanceBucket[]
+  callDetailRecords   CallDetailRecord[]
+  invoices            Invoice[]
+  payments            Payment[]
+  notifications       Notification[]
+  usageSummaries      UsageSummary[]
+
+  @@index([phone])
+  @@index([status])
+  @@index([tariffPlanId])
+  @@map("customers")
+}
+
+// ==========================================
+// 3. CONFIGURABLE TARIFF PLAN
+// ==========================================
+
+model TariffPlan {
+  id                   String   @id @default(uuid())
+  planCode             String   @unique // e.g., POST-STD-299, PRE-VAL-199
+  name                 String
+  type                 String   // PlanType: PREPAID, POSTPAID
+  description          String?
+  monthlyRental        Decimal  @default(0.00) // DECIMAL(10, 2)
+  pulseSeconds         Int      @default(60)   // 60s standard pulse, 1s per-second
+  validityDays         Int?                    // null for monthly postpaid; e.g. 28, 56, 84 for prepaid
+  rateLocal            Decimal  @default(0.0000) // DECIMAL(10, 4)
+  rateStd              Decimal  @default(0.0000) // DECIMAL(10, 4)
+  rateIsd              Decimal  @default(0.0000) // DECIMAL(10, 4)
+  includedLocalMinutes Int      @default(0)
+  includedStdMinutes   Int      @default(0)
+  includedIsdMinutes   Int      @default(0)
+  connectionCharge     Decimal  @default(0.0000) // DECIMAL(10, 4)
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  customers            Customer[]
+  allowanceBuckets     FreeAllowanceBucket[]
+
+  @@index([type])
+  @@index([isActive])
+  @@map("tariff_plans")
+}
+
+// ==========================================
+// 4. FREE ALLOWANCE BUCKET
+// ==========================================
+
+model FreeAllowanceBucket {
+  id                    String   @id @default(uuid())
+  customerId            String
+  tariffPlanId          String
+  localMinutesRemaining Decimal  @default(0.0000) // DECIMAL(10, 4)
+  stdMinutesRemaining   Decimal  @default(0.0000) // DECIMAL(10, 4)
+  isdMinutesRemaining   Decimal  @default(0.0000) // DECIMAL(10, 4)
+  resetDate             DateTime
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  customer              Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tariffPlan            TariffPlan @relation(fields: [tariffPlanId], references: [id])
+
+  @@unique([customerId, tariffPlanId])
+  @@index([resetDate])
+  @@map("free_allowance_buckets")
+}
+
+// ==========================================
+// 5. CALL DETAIL RECORD (CDR)
+// ==========================================
+
+model CallDetailRecord {
+  id                  String   @id @default(uuid())
+  sourceCallId        String?
+  cdrHash             String   @unique // SHA-256 fingerprint for deterministic deduplication
+  customerId          String
+  callerNumber        String
+  receiverNumber      String
+  callType            String   // CallType: LOCAL, STD, ISD
+  status              String   @default("COMPLETED") // CallStatus: COMPLETED, BUSY, NO_ANSWER, FAILED
+  startTime           DateTime
+  endTime             DateTime
+  durationSeconds     Int
+  billableSeconds     Int      @default(0)
+  pulseCount          Int      @default(0)
+  ratePerMinute       Decimal  @default(0.0000) // DECIMAL(10, 4)
+  freeMinutesDeducted Decimal  @default(0.0000) // DECIMAL(10, 4)
+  ratedAmount         Decimal  @default(0.0000) // DECIMAL(10, 4)
+  isBilled            Boolean  @default(false)
+  billingCycleCode    String?                   // e.g. '2026-11'
+  invoiceId           String?
+  createdAt           DateTime @default(now())
+
+  customer            Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoice             Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([customerId, isBilled])
+  @@index([customerId, billingCycleCode])
+  @@index([startTime])
+  @@index([callerNumber])
+  @@index([callType])
+  @@map("call_detail_records")
+}
+
+// ==========================================
+// 6. INVOICE
+// ==========================================
+
+model Invoice {
+  id               String   @id @default(uuid())
+  invoiceNumber    String   @unique // e.g. INV-202611-00001
+  customerId       String
+  billingCycleCode String   // e.g. '2026-11'
+  issueDate        DateTime @default(now())
+  dueDate          DateTime
+  rentalAmount     Decimal  @default(0.00) // DECIMAL(10, 2)
+  callCharges      Decimal  @default(0.00) // DECIMAL(10, 2)
+  taxAmount        Decimal  @default(0.00) // DECIMAL(10, 2) - 18% GST
+  discountAmount   Decimal  @default(0.00) // DECIMAL(10, 2)
+  previousArrears  Decimal  @default(0.00) // DECIMAL(10, 2)
+  totalAmount      Decimal  @default(0.00) // DECIMAL(10, 2)
+  paidAmount       Decimal  @default(0.00) // DECIMAL(10, 2)
+  status           String   @default("UNPAID") // InvoiceStatus: UNPAID, PARTIALLY_PAID, PAID, OVERDUE
+  pdfPath          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  customer          Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items             InvoiceItem[]
+  payments          Payment[]
+  callDetailRecords CallDetailRecord[]
+
+  @@unique([customerId, billingCycleCode]) // Prevents accidental double invoicing per cycle
+  @@index([status])
+  @@index([dueDate])
+  @@index([billingCycleCode])
+  @@map("invoices")
+}
+
+// ==========================================
+// 7. INVOICE ITEM (LINE ITEMS)
+// ==========================================
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  description String
+  category    String   // InvoiceItemCategory: RENTAL, USAGE, TAX, DISCOUNT, ARREARS
+  quantity    Decimal  @default(1.0000) // Allows fractional usage units
+  unitRate    Decimal  @default(0.0000) // DECIMAL(10, 4)
+  amount      Decimal  @default(0.00)   // DECIMAL(10, 2)
+  createdAt   DateTime @default(now())
+
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([category])
+  @@map("invoice_items")
+}
+
+// ==========================================
+// 8. PAYMENT & SETTLEMENT
+// ==========================================
+
+model Payment {
+  id             String    @id @default(uuid())
+  paymentNumber  String    @unique // e.g. PAY-202611-00001
+  invoiceId      String?           // Null for standalone prepaid wallet top-up
+  customerId     String
+  amount         Decimal           // DECIMAL(10, 2)
+  paymentMethod  String            // PaymentMethod: CREDIT_CARD, DEBIT_CARD, NET_BANKING, UPI, SIMULATED
+  status         String    @default("PENDING") // PaymentStatus: SUCCESS, PENDING, FAILED
+  transactionRef String    @unique // Format: TXN-YYYYMMDD-XXXXXX
+  idempotencyKey String    @unique // Idempotency protection against double debit
+  notes          String?
+  paidAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  invoice        Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  customer       Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([invoiceId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+// ==========================================
+// 9. NOTIFICATION & IN-APP ALERTS
+// ==========================================
+
+model Notification {
+  id         String    @id @default(uuid())
+  customerId String
+  title      String
+  message    String
+  type       String    // NotificationType: BILL_DUE, OVERDUE, LOW_BALANCE, SYSTEM
+  isRead     Boolean   @default(false)
+  actionUrl  String?
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, isRead])
+  @@index([type])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ==========================================
+// 10. USAGE SUMMARY (ANALYTICS PRE-AGGREGATION)
+// ==========================================
+
+model UsageSummary {
+  id                String   @id @default(uuid())
+  customerId        String
+  billingCycleCode  String   // e.g. '2026-11'
+  totalLocalMinutes Decimal  @default(0.00) // DECIMAL(10, 2)
+  totalStdMinutes   Decimal  @default(0.00) // DECIMAL(10, 2)
+  totalIsdMinutes   Decimal  @default(0.00) // DECIMAL(10, 2)
+  totalCallCount    Int      @default(0)
+  totalRatedAmount  Decimal  @default(0.00) // DECIMAL(10, 2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  customer          Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, billingCycleCode])
+  @@index([billingCycleCode])
+  @@map("usage_summaries")
+}
+
+// ==========================================
+// 11. AUDIT LOG (COMPLIANCE & TRACEABILITY)
+// ==========================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String   // e.g. USER_LOGIN, STATUS_CHANGE, BILL_RUN, PAYMENT_RECORDED
+  entity    String   // e.g. User, Customer, Invoice, Payment
+  entityId  String?
+  details   String?  // JSON stringified description of changes
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

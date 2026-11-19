@@ -1,0 +1,21 @@
+[
+  {
+    "payment_method": "UPI",
+    "details": {
+      "vpa": "customer@okhdfcbank"
+    }
+  },
+  {
+    "payment_method": "CREDIT_CARD",
+    "details": {
+      "card_network": "VISA",
+      "last4": "4242"
+    }
+  },
+  {
+    "payment_method": "NET_BANKING",
+    "details": {
+      "bank_code": "HDFC"
+    }
+  }
+]
